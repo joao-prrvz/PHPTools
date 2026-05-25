@@ -114,7 +114,8 @@ class Collection implements Iterator, ICollection, Countable {
     }
 
     /**
-     * Undocumented function
+     * Creates
+     * 
      * @template TComparer
      * @param callable(T): TComparer $comparer
      * @return ICollection<T>
@@ -125,14 +126,15 @@ class Collection implements Iterator, ICollection, Countable {
         return $collection;
     }
 
+
     public function contains(mixed $value): bool {
         return in_array($value, $this->items, true);
     }
 
     /**
-     * Undocumented function
+     * Retrieves the last element of the collection but if the collection is empty it will return null
      *
-     * @return T|null
+     * @return ?T
      */
     public function last(): mixed {
         if ($this->length < 1)
@@ -141,9 +143,9 @@ class Collection implements Iterator, ICollection, Countable {
     }
 
     /**
-     * Undocumented function
+     * Retrieves the first element of the collection but if the collection is empty it will return null
      *
-     * @return T|null
+     * @return ?T
      */
     public function first(): mixed {
         if ($this->length < 1)

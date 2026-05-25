@@ -2,7 +2,6 @@
 namespace PHPTools\Tests\ORM;
 
 use PHPTools\ORM\Queries\InsertQuery;
-use PHPTools\ORM\Queries\SelectQuery;
 use PHPTools\ORM\Queries\SQLCondition;
 use PHPTools\ORM\Queries\UpdateQuery;
 use PHPTools\ORM\SQLBuilder;
@@ -10,8 +9,6 @@ use PHPTools\Tests\Models\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionMethod;
-use ReflectionObject;
 
 class SQLBuilderTest extends TestCase {
 

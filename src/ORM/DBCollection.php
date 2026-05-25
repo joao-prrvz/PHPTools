@@ -6,7 +6,6 @@ use PDO;
 use PHPTools\Core\Collection;
 use PHPTools\Core\ICollection;
 use PHPTools\ORM\Queries\InsertQuery;
-use PHPTools\ORM\Queries\SelectQuery;
 use PHPTools\ORM\Queries\SQLCondition;
 use PHPTools\ORM\Queries\UpdateQuery;
 use ReflectionClass;
@@ -96,6 +95,10 @@ class DBCollection extends Collection {
 
     public function clone(): DBCollection {
         return new DBCollection($this->itemsType, $this->ctx, $this->builder->clone());
+    }
+
+    public function __clone() {
+        $this->builder = clone $this->builder;
     }
 
     /**

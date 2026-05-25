@@ -147,4 +147,8 @@ class SQLBuilder {
         $builder->query = $this->query->clone();
         return $builder;
     }
+
+    public function __clone() {
+        $this->query = clone $this->query;
+    }
 }   
