@@ -15,6 +15,7 @@ class WhereParser implements IParser {
     public array $conditions = [];
     public array $params = [];
     private array $columns;
+    private string $arrowParam; 
     private ReflectionFunction $ref;
 
     public function __construct(string $table, array $columns) {
@@ -41,6 +42,10 @@ class WhereParser implements IParser {
             if (!$arrowFn) {
                 throw new Exception("Could not locate arrow function in AST");
             }
+
+            $paramName = $arrowFn->params[0]->var->name;
+            $this->arrowParam = $paramName;
+
 
             // Parse the arrow function expression
             $result = $this->parseExpression($arrowFn->expr);
@@ -100,18 +105,22 @@ class WhereParser implements IParser {
         if ($node instanceof Expr\BinaryOp) {
             return $this->parseComparison($node);
         }
-
         // LIKE / NOT LIKE via string functions
         if ($node instanceof Expr\FuncCall) {
             return $this->parseStringFunction($node);
         }
-
         // Property fetch
-        if ($node instanceof Expr\PropertyFetch) {
+        // LEFT-SIDE property fetch (column)
+        if ($node instanceof Expr\PropertyFetch &&
+            $node->var instanceof Expr\Variable &&
+            $node->var->name === $this->arrowParam) {
+
             $prop = $node->name->name;
             $column = $this->columns[$prop] ?? throw new Exception("Unknown property: $prop");
+
             return ['sql' => "`{$this->table}`.`$column`", 'params' => []];
         }
+
 
         // Scalars
         if ($node instanceof Scalar) {
@@ -141,6 +150,16 @@ class WhereParser implements IParser {
             return ['sql' => '?', 'params' => [$value]];
         }
 
+        // Right-side nested property fetch
+        if ($node instanceof Expr\PropertyFetch) {
+            // If the root is a captured variable, resolve nested properties
+            if ($node->var instanceof Expr\Variable) {
+                $value = $this->resolveNestedPropertyFetch($node);
+                return ['sql' => '?', 'params' => [$value]];
+            }
+
+            // Otherwise, it's a left-side property fetch → handled earlier
+        }
         throw new Exception("Unsupported expression type: " . get_class($node));
     }
 
@@ -187,6 +206,40 @@ class WhereParser implements IParser {
             default => throw new Exception("Unsupported operator: " . get_class($node))
         };
     }
+
+    private function resolveNestedPropertyFetch(Expr\PropertyFetch $node) {
+        // Root must be a captured variable
+        if (!($node->var instanceof Expr\Variable)) {
+            throw new Exception("Left-side nested properties are not supported");
+        }
+
+        $vars = $this->ref->getStaticVariables();
+        $rootName = $node->var->name;
+
+        if (!array_key_exists($rootName, $vars)) {
+            throw new Exception("Unknown captured variable: $rootName");
+        }
+
+        $current = $vars[$rootName];
+        $cursor = $node;
+
+        // Walk the chain: $obj->a->b->c
+        while ($cursor instanceof Expr\PropertyFetch) {
+            $prop = $cursor->name->name;
+
+            if (!is_object($current) || !property_exists($current, $prop)) {
+                return null;
+            }
+
+            $current = $current->$prop;
+            $cursor = $cursor->var instanceof Expr\PropertyFetch
+                ? $cursor->var
+                : null;
+        }
+
+        return $current;
+    }
+
 
     private function parseStringFunction(Expr\FuncCall $node): array {
         if (!($node->name instanceof Node\Name)) {
