@@ -60,9 +60,9 @@ class DBCollection extends Collection {
             }
         }
         $collection = $this->clone();
-        $collection->builder->query = new InsertQuery($this->table, $this->builder->columnsToInsert, count($this->items));
-        $collection->builder->params[] = $params;
+        $collection->builder->query = new InsertQuery($this->table, $this->builder->columnsToInsert, count($items));
         $builder = $collection->builder;
+        $builder->params = array_merge($params, $builder->params);
         $this->run($builder);
     }
 
@@ -105,7 +105,8 @@ class DBCollection extends Collection {
     #[Override]
     public function where(callable $predicate): ICollection {
         $collection = $this->clone();
-        if($collection->builder->parseWhere($predicate))
+        $result = $collection->builder->parseWhere($predicate);
+        if($result)
             return $collection;
         return parent::where($predicate);
     }
@@ -115,13 +116,7 @@ class DBCollection extends Collection {
      */
     #[Override]
     public function first(): mixed {
-        $collection = $this->clone();
-        $query = $collection->builder->query;
-        if ($query instanceof SelectQuery) {
-            $query->limit = 1;
-            $query->offset = 0;
-        }
-        return $this->fetch($collection->builder->buildQuery(), $collection->builder->params)[0] ?? null;
+        return $this->take(1, 0)[0] ?? null ;
     }
 
     /**

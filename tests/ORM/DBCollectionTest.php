@@ -40,15 +40,10 @@ class DBCollectionTest extends TestCase {
         $pets = $this->ctx->pets->where(fn($p) => $p->userId === 1);
         $this->assertCount(3, $pets);
     }
-    #[Test]
-    public function select_multiple_where() {
-        $users = $this->ctx->users->where(fn($u) => $u->id == 1 && $u->email == "alice@example.com");
-        //var_dump($users->first());
-    }
 
     #[Test]
     public function sql_timestamp_php_date() {
-        $user = $this->ctx->users->first();
+        $user = clone $this->ctx->users->first();
         $this->assertInstanceOf(DateTime::class, $user->createAt);
     }
 
