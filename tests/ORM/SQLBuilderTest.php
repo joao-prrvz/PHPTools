@@ -1,32 +1,19 @@
 <?php
 namespace PHPTools\Tests\ORM;
 
+use PHPTools\ORM\Queries\InsertQuery;
 use PHPTools\ORM\Queries\SelectQuery;
+use PHPTools\ORM\Queries\SQLCondition;
+use PHPTools\ORM\Queries\UpdateQuery;
 use PHPTools\ORM\SQLBuilder;
 use PHPTools\Tests\Models\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionObject;
 
 class SQLBuilderTest extends TestCase {
-    #[Test]
-    public function get_columns() {
-        $builder = new SQLBuilder(User::class);
-        $columns = $builder->columns;
-        $this->assertArrayHasKey("email", $columns);
-        $this->assertArrayHasKey("name", $columns);
-        $this->assertArrayHasKey("id", $columns);
-    }
-
-    #[Test]
-    public function get_columns_to_insert() {
-        $builder = new SQLBuilder(User::class);
-        $columns = $builder->columnsToInsert;
-        $this->assertContains("email", $columns);
-        $this->assertContains("name", $columns);
-        $this->assertNotContains("id", $columns);
-        $this->assertNotContains("created_at", $columns);
-    }
 
     #[Test]
     public function get_table() {
@@ -35,108 +22,47 @@ class SQLBuilderTest extends TestCase {
     }
 
     #[Test]
-    public function format_columns() {
+    public function get_columns() {
         $builder = new SQLBuilder(User::class);
-        $method = new \ReflectionMethod(SelectQuery::class, "formatColumns");
-        $result = $method->invoke($builder->query);
-        $this->assertEquals("`User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`", $result);
+        $columns = $builder->columns;
+        $this->assertEquals(["id", "email", "name", "created_at"], array_values($columns));
     }
 
     #[Test]
-    public function build_select_query() {
+    public function get_columns_to_insert() {
         $builder = new SQLBuilder(User::class);
+        $columns = $builder->columnsToInsert;
+        $this->assertEquals(["email", "name"], array_values($columns));
+    }
+
+    #[Test]
+    public function get_columns_to_update() {
+        $builder = new SQLBuilder(User::class);
+        $columns = $builder->columnsToUpdate;
+        $this->assertEquals(["email", "name"], array_values($columns));
+    }
+
+    #[Test]
+    public function build_select_all_query() {
+        $ctx = new DBTestContext();
+        $ref = new ReflectionClass($ctx->users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($ctx->users);
         $query = $builder->buildQuery();
-        $this->assertEquals("SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User`", $query);
-    }
-
-    #[Test]
-    public function get_primary_key() {
-        $builder = new SQLBuilder(User::class);
-        $key = array_values($builder->primaryKeys)[0] ?? null;
-        $this->assertEquals("id", $key);
-    }
-
-
-    #[Test]
-    public function parse_where_static_value() {
-        $builder = new SQLBuilder(User::class);
-        $ctx = new DBTestContext();
-        $predicate = fn($u) => $u->email == "johndoe@example.com";
-        $ctx->users->where($predicate);
-        $builder->parseWhere($predicate);
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
-            "$builder->query"
-        );
-    }
-
-    #[Test]
-    public function parse_where_null_static_value() {
-        $builder = new SQLBuilder(User::class);
-        $ctx = new DBTestContext();
-        $predicate = fn($u) => $u->email == null;
-        $ctx->users->where($predicate);
-        $builder->parseWhere($predicate);
-        $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
-            "$builder->query"
-        );
-    }
-
-    #[Test]
-    public function parse_where_param_value() {
-        $builder = new SQLBuilder(User::class);
-        $ctx = new DBTestContext();
-        $email = "johndoe@example.com";
-        $predicate = fn($u) => $u->email == $email;
-        $ctx->users->where($predicate);
-        $builder->parseWhere($predicate);
-        $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
-            "$builder->query"
-        );
-    }
-
-    #[Test]
-    public function parse_where_null_param_value() {
-        $builder = new SQLBuilder(User::class);
-        $email = null;
-        $predicate = fn($u) => $u->email == $email;
-        $builder->parseWhere($predicate);
-        $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
-            "$builder->query"
-        );
-    }
-
-    #[Test]
-    public function parse_where_static_value_lambda() {
-        $ctx = new DBTestContext();
-        $users = $ctx->users->where(fn($u) => $u->email === "johndoe@example.com");
-        $query = $users->builder->buildQuery();
-        $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
-            $query
-        );
-    }
-
-        #[Test]
-    public function parse_where_null_static_value_lambda() {
-        $ctx = new DBTestContext();
-        $users = $ctx->users->where(fn($u) => $u->email === null);
-        $query = $users->builder->buildQuery();
-        $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User`",
             $query
         );
     }
 
     #[Test]
-    public function parse_where_param_value_lambda() {
+    public function build_select_where_query() {
         $ctx = new DBTestContext();
-        $email = "johndoe@example.com";
-        $users = $ctx->users->where(fn($u) => $u->email === $email);
-        $query = $users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === "alice@example.com");
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
             $query
@@ -144,36 +70,91 @@ class SQLBuilderTest extends TestCase {
     }
 
     #[Test]
-    public function parse_where_null_param_value_lambda() {
+    public function params_select_where_query() {
         $ctx = new DBTestContext();
-        $email = null;
-        $users = $ctx->users->where(fn($u) => $u->email === $email);
-        $query = $users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === "alice@example.com");
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
+            ["alice@example.com"],
+            $builder->params
+        );
+    }
+
+    #[Test]
+    public function build_select_where_query_and_operator() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => $u->email === "alice@example.com" && $u->id == 1);
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? AND `User`.`id` = ?)",
             $query
         );
     }
 
     #[Test]
-    public function parse_where_or_static_value_lambda() {
+    public function build_select_where_query_and_lambdas() {
         $ctx = new DBTestContext();
-        $users = $ctx->users->where(fn($u) => $u->email == "johndoe@example.com" || $u->email == "alice@example.com");
-        $query = $users->builder->buildQuery();
+        $users = $ctx->users
+            ->where(fn($u) => $u->email === "alice@example.com")
+            ->where(fn($u) =>  $u->id == 1);
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? OR `User`.`email` = ?)",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query
         );
     }
 
     #[Test]
-    public function parse_where_and_static_value_lambda_followed() {
+    public function build_select_where_query_or_operator() {
         $ctx = new DBTestContext();
-        $users = $ctx->users->where(fn($u) => $u->email == "johndoe@example.com")
-        ->where(fn($u) => $u->email == "alice@example.com");
-        $query = $users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === "alice@example.com" || $u->id == 1);
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ? AND `User`.`email` = ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? OR `User`.`id` = ?)",
+            $query
+        );
+    }
+
+    #[Test]
+    public function build_insert_query() {
+        $builder = new SQLBuilder(User::class);
+        $builder->query = new InsertQuery($builder->table, $builder->columnsToInsert, 1);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "INSERT INTO `User` (`email`, `name`) VALUES (?, ?)",
+            $query
+        );
+    }
+
+    #[Test]
+    public function build_insert_query_multiple() {
+        $builder = new SQLBuilder(User::class);
+        $builder->query = new InsertQuery($builder->table, $builder->columnsToInsert, 4);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "INSERT INTO `User` (`email`, `name`) VALUES (?, ?), (?, ?), (?, ?), (?, ?)",
+            $query
+        );
+    }
+
+    #[Test]
+    public function build_update_query() {
+        $builder = new SQLBuilder(User::class);
+        $builder->query = new UpdateQuery($builder->table, $builder->columnsToUpdate, [new SQLCondition("`User`.`id` = ?")]);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "UPDATE `User` SET `email` = ?, `name` = ? WHERE `User`.`id` = ?",
             $query
         );
     }
