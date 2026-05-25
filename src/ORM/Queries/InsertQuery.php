@@ -36,7 +36,7 @@ class InsertQuery implements IQuery {
 
     private function formatColumns(): string {
         $table = $this->table;
-        return "`$table`.`".implode("`, `$table`.`", $this->columns)."`";
+        return "`".implode("`, `", $this->columns)."`";
     }
 
     private function formatValues(): string {
