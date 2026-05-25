@@ -1,0 +1,32 @@
+{
+    "name": "joao/lin-q",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "PHPTools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPTools\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Joao Victor Pereira Vaz"
+        }
+    ],
+    "require-dev": {
+        "pestphp/pest": "^4.7",
+        "phpunit/phpunit": "^12.5"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "require": {
+        "joao-prrvz/php-utils": "^0.0.7",
+        "nikic/php-parser": "^5.7"
+    }
+}

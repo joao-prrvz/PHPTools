@@ -1,0 +1,14 @@
+<phpunit
+    bootstrap="tests/bootstrap.php"
+    displayDetailsOnTestsThatTriggerDeprecations="true"
+>
+    <php>
+        <ini name="display_errors" value="1"/>
+        <ini name="error_reporting" value="32767"/>
+    </php>
+    <testsuites>
+        <testsuite name="default">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
