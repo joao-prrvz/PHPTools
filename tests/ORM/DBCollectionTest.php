@@ -34,16 +34,43 @@ class DBCollectionTest extends TestCase {
         $user = $this->ctx->users->where(fn($u) => $u->email === null)->first();
         $this->assertNull($user);
     }
+
     #[Test]
     public function select_all_entites_by_fk() {
         $pets = $this->ctx->pets->where(fn($p) => $p->userId === 1);
         $this->assertCount(3, $pets);
+    }
+    #[Test]
+    public function select_multiple_where() {
+        $users = $this->ctx->users->where(fn($u) => $u->id == 1 && $u->email == "alice@example.com");
+        //var_dump($users->first());
     }
 
     #[Test]
     public function sql_timestamp_php_date() {
         $user = $this->ctx->users->first();
         $this->assertInstanceOf(DateTime::class, $user->createAt);
+    }
+
+    #[Test]
+    public function update() {
+        $user = $this->ctx->users->first();
+        $user->name = "Alice Updated";
+        $this->ctx->users->update($user);
+        $id = $user->id;
+        $user = $this->ctx->users->where(fn($u) => $u->id == $id)->first();
+        $this->assertEquals("Alice Updated", $user->name);
+    }
+
+    #[Test]
+    public function select_double_condition_query() {
+        $users = $this->ctx->users->where(fn($u) => $u->email === "hello");
+        $users = $users->where(fn($u) => $u->id === 1);
+        $query = $users->builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` == ? AND `User`.`email` == ?",
+            $query
+        );
     }
 
     public function getTime(callable $callable): float {

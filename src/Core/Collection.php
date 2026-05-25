@@ -3,6 +3,7 @@ namespace PHPTools\Core;
 
 use Countable;
 use Iterator;
+use Override;
 use TypeError;
 
 /**
@@ -150,7 +151,12 @@ class Collection implements Iterator, ICollection, Countable {
         return $this->items[0];
     }
 
-    private function isAssignable(mixed $value, string $targetType): bool {
+    public function take(int $limit, int $offset = 0): array {
+        $items = [... $this->items];
+        return array_splice($items, $offset, $limit);
+    }
+
+    protected function isAssignable(mixed $value, string $targetType): bool {
         if (class_exists($targetType) && $value instanceof $targetType)
             return true;
         $compatibleTypes = [

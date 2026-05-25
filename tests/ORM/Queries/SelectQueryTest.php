@@ -11,30 +11,27 @@ class SelectQueryTest extends TestCase {
 
     #[Test]
     public function to_string() {
-        $selectQuery = new SelectQuery("User");
-        $selectQuery->columns = ["id", "email"];
+        $selectQuery = new SelectQuery("User", ["id", "email"]);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User`", "$selectQuery");
     }
 
     #[Test]
     public function to_string_with_condition_and() {
-        $selectQuery = new SelectQuery("User");
-        $selectQuery->columns = ["id", "email"];
-        $selectQuery->conditions = [
+        $conditions = [
             new SQLCondition("`User`.`id` = ?"),
             new SQLCondition("`User`.`email` = ?"),
         ];
+        $selectQuery = new SelectQuery("User", ["id", "email"], $conditions);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?", "$selectQuery");
     }
 
     #[Test]
     public function to_string_with_condition_or() {
-        $selectQuery = new SelectQuery("User");
-        $selectQuery->columns = ["id", "email"];
-        $selectQuery->conditions = [
+        $conditions = [
             new SQLCondition("`User`.`id` = ?"),
             new SQLCondition("`User`.`email` = ?", SQLOperator::Or),
         ];
+        $selectQuery = new SelectQuery("User", ["id", "email"], $conditions);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User` WHERE `User`.`id` = ? OR `User`.`email` = ?", "$selectQuery");
     }
 }

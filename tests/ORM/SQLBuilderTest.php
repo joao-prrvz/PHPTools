@@ -38,7 +38,7 @@ class SQLBuilderTest extends TestCase {
     public function format_columns() {
         $builder = new SQLBuilder(User::class);
         $method = new \ReflectionMethod(SelectQuery::class, "formatColumns");
-        $result = $method->invoke($builder->select);
+        $result = $method->invoke($builder->query);
         $this->assertEquals("`User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`", $result);
     }
 
@@ -66,7 +66,7 @@ class SQLBuilderTest extends TestCase {
         $builder->parseWhere($predicate);
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
-            "$builder->select"
+            "$builder->query"
         );
     }
 
@@ -79,7 +79,7 @@ class SQLBuilderTest extends TestCase {
         $builder->parseWhere($predicate);
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
-            "$builder->select"
+            "$builder->query"
         );
     }
 
@@ -93,7 +93,7 @@ class SQLBuilderTest extends TestCase {
         $builder->parseWhere($predicate);
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
-            "$builder->select"
+            "$builder->query"
         );
     }
 
@@ -105,15 +105,15 @@ class SQLBuilderTest extends TestCase {
         $builder->parseWhere($predicate);
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
-            "$builder->select"
+            "$builder->query"
         );
     }
 
     #[Test]
     public function parse_where_static_value_lambda() {
         $ctx = new DBTestContext();
-        $ctx->users->where(fn($u) => $u->email === "johndoe@example.com");
-        $query = $ctx->users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === "johndoe@example.com");
+        $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
             $query
@@ -123,8 +123,8 @@ class SQLBuilderTest extends TestCase {
         #[Test]
     public function parse_where_null_static_value_lambda() {
         $ctx = new DBTestContext();
-        $ctx->users->where(fn($u) => $u->email === null);
-        $query = $ctx->users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === null);
+        $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
             $query
@@ -135,8 +135,8 @@ class SQLBuilderTest extends TestCase {
     public function parse_where_param_value_lambda() {
         $ctx = new DBTestContext();
         $email = "johndoe@example.com";
-        $ctx->users->where(fn($u) => $u->email === $email);
-        $query = $ctx->users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === $email);
+        $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
             $query
@@ -147,8 +147,8 @@ class SQLBuilderTest extends TestCase {
     public function parse_where_null_param_value_lambda() {
         $ctx = new DBTestContext();
         $email = null;
-        $ctx->users->where(fn($u) => $u->email === $email);
-        $query = $ctx->users->builder->buildQuery();
+        $users = $ctx->users->where(fn($u) => $u->email === $email);
+        $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
             $query

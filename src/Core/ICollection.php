@@ -60,4 +60,6 @@ interface ICollection extends Countable {
      * @return T[]
      */
     public function toArray(): array;
+
+    public function take(int $limit, int $offset = 0): array;
 }

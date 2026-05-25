@@ -5,7 +5,13 @@ use Override;
 use PDO;
 use PHPTools\Core\Collection;
 use PHPTools\Core\ICollection;
+use PHPTools\ORM\Queries\InsertQuery;
+use PHPTools\ORM\Queries\SelectQuery;
+use PHPTools\ORM\Queries\SQLCondition;
+use PHPTools\ORM\Queries\UpdateQuery;
 use ReflectionClass;
+use ReflectionProperty;
+use TypeError;
 
 /**
  * @template T
@@ -39,10 +45,58 @@ class DBCollection extends Collection {
         $this->builder = $builder;
     }
 
+    /**
+     * @param T ...$items
+     * @return void
+     */
     #[Override]
     public function add(mixed ...$items) {
-        //Insert into DB
-        parent::add(... $items);
+        $params = [];
+        foreach ($items as $key => $item) {
+            if (!$this->isAssignable($item, $this->itemsType))
+                throw new TypeError("The item at the index of $key isn't of type $this->itemsType");
+            foreach ($this->builder->columnsToInsert as $propName => $column) {
+                $reflection = new ReflectionProperty($this->itemsType, $propName);
+                $params[] = $reflection->getValue($item);
+            }
+        }
+        $collection = $this->clone();
+        $collection->builder->query = new InsertQuery($this->table, $this->builder->columnsToInsert, count($this->items));
+        $collection->builder->params[] = $params;
+        $builder = $collection->builder;
+        $this->run($builder);
+    }
+
+    /**
+     * @param T ...$items
+     * @return void
+     */
+    public function update(mixed ...$items) {
+        $params = [];
+        $collection = $this->clone();
+        $builder = $collection->builder;
+        foreach ($items as $index => $item) {
+            if (!$this->isAssignable($item, $this->itemsType))
+                throw new TypeError("The item at the index of $index isn't of type $this->itemsType");
+            $conditions = [];
+            foreach ($builder->columnsToUpdate as $propName => $column) {
+                $reflection = new ReflectionProperty($this->itemsType, $propName);
+                $params[] = $reflection->getValue($item);
+            }
+            foreach ($builder->primaryKeys as $propName => $key) {
+                $reflection = new ReflectionProperty($this->itemsType, $propName);
+                $conditions[] = new SQLCondition("`$this->table`.`$key` = ?");
+                $params[] = $reflection->getValue($item);
+            }
+            $builder->params = $params;
+            $builder->query = new UpdateQuery($this->table, $builder->columnsToUpdate, $conditions);
+            $this->run($builder);
+        }
+        return $collection;
+    }
+
+    public function clone(): DBCollection {
+        return new DBCollection($this->itemsType, $this->ctx, $this->builder->clone());
     }
 
     /**
@@ -51,7 +105,9 @@ class DBCollection extends Collection {
      */
     #[Override]
     public function where(callable $predicate): ICollection {
-        $this->builder->parseWhere($predicate);
+        $collection = $this->clone();
+        if($collection->builder->parseWhere($predicate))
+            return $collection;
         return parent::where($predicate);
     }
 
@@ -89,5 +145,9 @@ class DBCollection extends Collection {
             $result[] = $obj;
         }
         return $result;
+    }
+
+    public function run(SQLBuilder $builder) {
+        return $this->ctx->run($builder->buildQuery(), $builder->params);
     }
 }
