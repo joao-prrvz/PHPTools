@@ -83,6 +83,47 @@ class SQLBuilderTest extends TestCase {
     }
 
     #[Test]
+    public function build_select_query_null_value() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => $u->email === null);
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
+            $query
+        );
+    }
+
+    #[Test]
+    public function build_select_query_str_contains() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => str_contains($u->email, "alice"));
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $query = $builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` LIKE ?",
+            $query
+        );
+    }
+
+    #[Test]
+    public function build_select_query_str_params() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => str_contains($u->email, "alice"));
+        $ref = new ReflectionClass($users);
+        /** @var SQLBuilder */
+        $builder = $ref->getProperty("builder")->getValue($users);
+        $this->assertEquals(
+            ["%alice%"],
+            $builder->params
+        );
+    }
+
+    #[Test]
     public function build_select_where_query_and_operator() {
         $ctx = new DBTestContext();
         $users = $ctx->users->where(fn($u) => $u->email === "alice@example.com" && $u->id == 1);
