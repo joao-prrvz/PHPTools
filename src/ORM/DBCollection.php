@@ -32,7 +32,6 @@ class DBCollection extends Collection {
             return $this->_items;
         }
         set => $this->_items = $value;
-        
     }
 
     public string $table { get => $this->builder->table; }
@@ -116,7 +115,13 @@ class DBCollection extends Collection {
      */
     #[Override]
     public function first(): mixed {
-        return parent::first();
+        $collection = $this->clone();
+        $query = $collection->builder->query;
+        if ($query instanceof SelectQuery) {
+            $query->limit = 1;
+            $query->offset = 0;
+        }
+        return $this->fetch($collection->builder->buildQuery(), $collection->builder->params)[0] ?? null;
     }
 
     /**

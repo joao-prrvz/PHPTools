@@ -16,6 +16,4 @@ abstract class DBContext {
         $sttmt->execute($params);
         return $sttmt;
     }
-
-   
 }

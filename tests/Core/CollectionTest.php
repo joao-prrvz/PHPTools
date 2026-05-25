@@ -125,4 +125,14 @@ class CollectionTest extends TestCase {
         $collection->add(["name" => "hot-dogs", "price" => 0.59]);
         $this->assertTrue($collection->contains($result[0]));
     }
+
+    #[Test]
+    public function collection_take() {
+        $collection = new Collection("int");
+        $collection->add(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        $result = $collection->take(3, 1);
+        $this->assertSame([2, 3, 4], $result);
+    }
+
+    
 }

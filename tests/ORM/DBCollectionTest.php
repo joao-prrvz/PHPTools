@@ -68,7 +68,7 @@ class DBCollectionTest extends TestCase {
         $users = $users->where(fn($u) => $u->id === 1);
         $query = $users->builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` == ? AND `User`.`email` == ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query
         );
     }

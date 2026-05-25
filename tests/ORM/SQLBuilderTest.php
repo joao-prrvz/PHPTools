@@ -65,7 +65,7 @@ class SQLBuilderTest extends TestCase {
         $ctx->users->where($predicate);
         $builder->parseWhere($predicate);
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
             "$builder->query"
         );
     }
@@ -92,7 +92,7 @@ class SQLBuilderTest extends TestCase {
         $ctx->users->where($predicate);
         $builder->parseWhere($predicate);
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
             "$builder->query"
         );
     }
@@ -115,7 +115,7 @@ class SQLBuilderTest extends TestCase {
         $users = $ctx->users->where(fn($u) => $u->email === "johndoe@example.com");
         $query = $users->builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
             $query
         );
     }
@@ -138,7 +138,7 @@ class SQLBuilderTest extends TestCase {
         $users = $ctx->users->where(fn($u) => $u->email === $email);
         $query = $users->builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` == ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
             $query
         );
     }
@@ -151,6 +151,29 @@ class SQLBuilderTest extends TestCase {
         $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
+            $query
+        );
+    }
+
+    #[Test]
+    public function parse_where_or_static_value_lambda() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => $u->email == "johndoe@example.com" || $u->email == "alice@example.com");
+        $query = $users->builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? OR `User`.`email` = ?)",
+            $query
+        );
+    }
+
+    #[Test]
+    public function parse_where_and_static_value_lambda_followed() {
+        $ctx = new DBTestContext();
+        $users = $ctx->users->where(fn($u) => $u->email == "johndoe@example.com")
+        ->where(fn($u) => $u->email == "alice@example.com");
+        $query = $users->builder->buildQuery();
+        $this->assertEquals(
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ? AND `User`.`email` = ?",
             $query
         );
     }
