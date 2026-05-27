@@ -6,7 +6,7 @@ use ReflectionProperty;
 
 abstract class Filter implements IValidate {
 
-    public function __construct(private int $filter, public string $message)
+    public function __construct(protected int $filter, public string $message)
     { }
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {

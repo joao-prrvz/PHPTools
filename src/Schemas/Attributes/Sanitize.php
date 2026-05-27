@@ -1,10 +1,12 @@
 <?php
 namespace PHPTools\Schemas\Attributes;
 
+use Attribute;
 use ReflectionProperty;
 
+#[Attribute(Attribute::TARGET_PROPERTY)]
 class Sanitize implements IMutate {
-    public function __construct(private int $sanitizer)
+    public function __construct(private int $sanitizer = FILTER_SANITIZE_FULL_SPECIAL_CHARS)
     { }
 
     public function mutate(ReflectionProperty $refProp, mixed $value): mixed {

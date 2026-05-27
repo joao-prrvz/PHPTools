@@ -3,7 +3,9 @@ namespace PHPTools\Schemas;
 
 use PHPTools\Schemas\Attributes as SA;
 use PHPTools\Schemas\Attributes\ErrorType;
+use PHPTools\Schemas\Attributes\IMutate;
 use PHPTools\Schemas\Attributes\Validates\IValidate;
+use PHPTools\Schemas\Traits\TypeConverter;
 use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -19,6 +21,8 @@ class Validator {
     private bool $_valide = false;
     private array $data;
     private ReflectionClass $refClass;
+
+    use TypeConverter;
 
     /** @var array<string, string[]> */
     public array $errors = [];
@@ -96,15 +100,18 @@ class Validator {
         else if ($refType instanceof ReflectionUnionType)
             $refTypes = $refType->getTypes();
         $results = [];
-        foreach ($refTypes as $refType) {
-            $results[] = $this->tryConvertType($refProp, $refType, $value);
-        }
+        foreach ($refTypes as $refType)
+            $results[] = $this->tryConvertType($refProp, $refType->getName(), $value, $refType->allowsNull());
         if (!in_array(true, $results))
             $this->addError($field, $this->generateTypeErrorMessage($refProp, $refTypes));
         foreach ($refProp->getAttributes(IValidate::class, ReflectionAttribute::IS_INSTANCEOF) as $refValidate) {
             $attrValidate = $refValidate->newInstance();
             if (!$attrValidate->validate($refProp, $value))
                 $this->addError($field, $attrValidate->message);
+        }
+        foreach ($refProp->getAttributes(IMutate::class, ReflectionAttribute::IS_INSTANCEOF) as $refMutate) {
+            $attrValidate = $refMutate->newInstance();
+            $value = $attrValidate->mutate($refProp, $value);
         }
         if (count($this->errors) < 1)
             $refProp->setValue($instance, $value);
@@ -121,64 +128,11 @@ class Validator {
         return $message;
     }
 
-    private function tryConvertType(ReflectionProperty $refProp, ReflectionNamedType $refType, mixed &$value): bool {
-        $typeName = $refType->getName();
-        $convertedValue = $value;
-        if ($this->propretyIsStrict($refProp))
-            return get_debug_type($value) === $refType->getName();
-
-        switch($typeName) {
-            case "int":
-                $convertedValue = $this->toInt($value);
-                break;
-            case "float":
-                $convertedValue = $this->toFloat($value);
-                break;
-            case "bool":
-                $convertedValue = $this->toBool($value);
-                break;
-            case "string":
-                $convertedValue = (string)$value;
-                break;
-            default:
-                $convertedValue = get_debug_type($value) === $refType->getName() ? $value : null;
-                break;
-        }
-
-        if ($convertedValue === null)
-            return false;
-        $value = $convertedValue;
-        return true;
-    }
-
-    private function toInt(mixed $value): ?int {
-        $intValue = filter_var($value, FILTER_VALIDATE_INT);
-        if ($intValue === false)
-            return null;
-        return $intValue;
-    }
-
-    private function toFloat(mixed $value): ?float {
-        $intValue = filter_var($value, FILTER_VALIDATE_FLOAT);
-        if ($intValue === false)
-            return null;
-        return $intValue;
-    }
-
-    private function toBool(mixed $value): ?bool {
-        $boolValue = filter_var($value, FILTER_VALIDATE_BOOL);
-        return $boolValue; 
-    }
-
     private function getPropretyFieldName(ReflectionProperty $refProp): string {
         $refField = $refProp->getAttributes(SA\Field::class)[0] ?? null;
         if ($refField !== null)
             return $refField->newInstance()->name;
         return $refProp->name;
-    }
-
-    private function propretyIsStrict(ReflectionProperty $refProp): bool {
-        return count($refProp->getAttributes(SA\Strict::class)) > 0;
     }
      
 }
