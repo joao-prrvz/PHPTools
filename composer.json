@@ -18,8 +18,7 @@
     ],
     "require-dev": {
         "pestphp/pest": "^4.7",
-        "phpunit/phpunit": "^12.5",
-        "joao-prrvz/php-utils": "^0.0.7"
+        "phpunit/phpunit": "^12.5"
     },
     "config": {
         "allow-plugins": {

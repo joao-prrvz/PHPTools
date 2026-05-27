@@ -59,8 +59,9 @@ class DBCollectionTest extends TestCase {
 
     #[Test]
     public function select_double_condition_query() {
-        $users = $this->ctx->users->where(fn($u) => $u->email === "hello");
-        $users = $users->where(fn($u) => $u->id === 1);
+        $users = $this->ctx->users
+            ->where(fn($u) => $u->email === "hello")
+            ->where(fn($u) => $u->id === 1);
         $query = $users->builder->buildQuery();
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
