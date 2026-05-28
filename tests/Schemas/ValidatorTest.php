@@ -3,6 +3,7 @@ namespace PHPTools\Tests\Schemas;
 
 use PHPTools\Schemas\Validator;
 use PHPTools\Tests\Schemas\UserInfos;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -62,13 +63,7 @@ class ValidatorTest extends TestCase {
         $this->assertSame($expected, $fields);
     }
 
-    #[Test]
-    public function convert_types() {
-        $data = $this->data;
-        $data["website"]["rating"] = "4.5";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertEquals($this->user, $validator->parse());
-    }
+    
 
     #[Test]
     public function convert_types_strict() {
@@ -88,126 +83,133 @@ class ValidatorTest extends TestCase {
         $this->assertNotNull($user);
     }
 
-    #[Test]
-    public function filter_validate_email() {
+    #[Test, DataProvider("convertTypesCases")]
+    public function convert_types(string $path, mixed $value, mixed $expected) {
         $data = $this->data;
-        $data["email"] = "john";
+        self::setPath($data, $path, $value);
+        $validator = new Validator(UserInfos::class, $data);
+        $value = self::getPath($validator->parse(), $path);
+        if (is_object($expected))
+            $this->assertEquals($expected, $value);
+        else
+            $this->assertSame($expected, $value);
+    }
+
+    #[Test, DataProvider("invalidCases")]
+    public function validates_invalid_cases(string $path, mixed $value) {
+        $data = $this->data;
+        if ($value === "__unset__")
+            self::unsetPath($data, $path);
+        else
+            self::setPath($data, $path, $value);
         $validator = new Validator(UserInfos::class, $data);
         $this->assertNull($validator->parse());
     }
 
-    #[Test]
-    public function filter_validate_ip() {
+    #[Test, DataProvider("mutateCases")]
+    public function mutate_cases(string $path, mixed $value, mixed $expected) {
         $data = $this->data;
-        $data["website"]["ip"] = "1.1.1";
+        self::setPath($data, $path, $value);
         $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+        $data = $validator->parse();
+        $value = self::getPath($data, $path);
+        $this->assertEquals($expected, $value);
     }
 
-    #[Test]
-    public function filter_validate_url() {
-        $data = $this->data;
-        $data["website"]["url"] = "not an url";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+
+    private static function setPath(array &$data, string $path, mixed $value): void {
+        $keys = explode(".", $path);
+        $ref =& $data;
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $ref)) {
+                $ref[$key] = [];
+            }
+            $ref =& $ref[$key];
+        }
+        $ref = $value;
     }
 
-    #[Test]
-    public function filter_validate_domain() {
-        $data = $this->data;
-        $data["website"]["domain"] = "not a domain";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+    private static function unsetPath(array &$data, string $path): void {
+        $keys = explode(".", $path);
+        $last = array_pop($keys);
+        $ref =& $data;
+        foreach ($keys as $key) {
+            if (!isset($ref[$key])) {
+                return;
+            }
+            $ref =& $ref[$key];
+        }
+        unset($ref[$last]);
     }
 
-    #[Test]
-    public function validate_min() {
-        $data = $this->data;
-        $data["website"]["rating"] = -1;
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+    private static function getPath(mixed $data, string $path): mixed {
+        $keys = explode('.', $path);
+        foreach ($keys as $key) {
+            if (is_array($data))
+                $data = $data[$key] ?? null;
+            elseif (is_object($data)) 
+                $data = $data->$key ?? null;
+            else
+                return null;
+        }
+        return $data;
     }
 
-    #[Test]
-    public function validate_max() {
-        $data = $this->data;
-        $data["website"]["rating"] = 9999;
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+    public static function invalidCases(): array {
+        return [
+            "strict type mismatch" => 
+                ["name", 0],
+            "missing required field" => 
+                ["email", "__unset__"],
+            "invalid email" => 
+                ["email", "john"],
+            "invalid ip" => 
+                ["website.ip", "1.1.1"],
+            "invalid url" => 
+                ["website.url", "not an url"],
+            "invalid domain" => 
+                ["website.domain", "not a domain"],
+            "rating too small" => 
+                ["website.rating", -1],
+            "rating too large" => 
+                ["website.rating", 9999],
+            "name too short" => 
+                ["name", "J"],
+            "name too long" => 
+                ["name", "Way too long of a test name"],
+            "tags count too small" =>
+                ["website.tags", []],
+            "tags count too large" =>
+                ["website.tags", ["a","b","c","d"]],
+            "invalid date" =>
+                ["birthday", "Bad format"],
+            "invalid friends array type" => 
+                ["friends", ["csd"]],
+        ];
     }
 
-    #[Test]
-    public function validate_length_min() {
-        $data = $this->data;
-        $data["name"] = "J";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+    public static function convertTypesCases() {
+        return [
+            "string to float" =>
+                ["website.rating", "4.5", 4.5],
+            "int array to string array" => 
+                ["website.tags", [1], ["1"]],
+        ];
     }
 
-    #[Test]
-    public function validate_length_max() {
-        $data = $this->data;
-        $data["name"] = "Way too long of a test name";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
+    public static function mutateCases(): array {
+        return [
+            "sanitize string" => [
+                "name",
+                "<script></script>",
+                "&lt;script&gt;&lt;/script&gt;",
+            ],
+            "sanitize string array" => [
+                "website.tags",
+                ["<script></script>"],
+                ["&lt;script&gt;&lt;/script&gt;"],
+            ],
+        ];
     }
 
-    #[Test]
-    public function validate_count_min() {
-        $data = $this->data;
-        $data["website"]["tags"] = [];
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
-    }
-
-    #[Test]
-    public function validate_count_max() {
-        $data = $this->data;
-        $data["website"]["tags"] = ["portfolio", "commercial", "coding", "multi-media"];
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
-    }
-
-    #[Test]
-    public function validate_date() {
-        $data = $this->data;
-        $data["birthday"] = "Bad format";
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
-    }
-
-    #[Test]
-    public function mutate_sanitize() {
-        $data = $this->data;
-        $data["name"] = "<script></script>";
-        $validator = new Validator(UserInfos::class, $data);
-        $user = $validator->parse();
-        $this->assertSame("&lt;script&gt;&lt;/script&gt;", $user->name);
-    }
-
-    #[Test]
-    public function mutate_sanitize_array() {
-        $data = $this->data;
-        $data["website"]["tags"] = ["<script></script>"];
-        $validator = new Validator(UserInfos::class, $data);
-        $user = $validator->parse();
-        $this->assertSame(["&lt;script&gt;&lt;/script&gt;"], $user->website->tags);
-    }
-
-    #[Test]
-    public function array_convert_types() {
-        $data = $this->data;
-        $data["website"]["tags"] = [1];
-        $validator = new Validator(UserInfos::class, $data);
-        $user = $validator->parse();
-        $this->assertSame(["1"], $user->website->tags);
-    }
-
-    #[Test]
-    public function array_convert_types_object() {
-        $data = $this->data;
-        $data["friends"] = ["csd"];
-        $validator = new Validator(UserInfos::class, $data);
-        $this->assertNull($validator->parse());
-    }
 }
