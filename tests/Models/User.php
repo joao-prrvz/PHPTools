@@ -10,12 +10,9 @@ class User {
     public int $id;
     public string $email;
     public string $name;
-    #[DB\Column("created_at"), DB\Block]
-    private string $_createdAt;
+    #[DB\Column("created_at"), DB\Block, DB\Date("Y-m-d H:i:s")]
+    public DateTime $createAt;
 
-    #[DB\Ignore]
-    public DateTime $createAt {
-        get => DateTime::createFromFormat(DBCollection::TIMESTAMP_FORMAT, $this->_createdAt);
-        set => $value->format(DBCollection::TIMESTAMP_FORMAT);
-    }
+    public UserType $type;
+
 }

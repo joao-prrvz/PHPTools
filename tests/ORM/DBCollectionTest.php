@@ -3,6 +3,7 @@ namespace PHPTools\Tests\ORM;
 
 use DateTime;
 use PHPTools\ORM\DBCollection;
+use PHPTools\Tests\Models\UserType;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -66,7 +67,7 @@ class DBCollectionTest extends TestCase {
         $query = $users->builder->buildQuery();
         $this->assertInstanceOf(DBCollection::class, $users);
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query
         );
     }
@@ -93,6 +94,13 @@ class DBCollectionTest extends TestCase {
     public function select_specific_columns_with_alias() {
         $user = $this->ctx->users->select(fn($u) => ["E-mail" => $u->email, "ID" => $u->id])->first();
         $this->assertEquals(["E-mail" => "alice@example.com", "ID" => 1], $user);
+    }
+    #[Test]
+    public function where_enum() {
+        $user = $this->ctx->users
+            //->where(fn($u) => $u->type === UserType::ADMIN)
+            ->select(fn($u) => [$u->email, $u->type]);
+        var_dump($user);
     }
 
     public function getTime(callable $callable): float {

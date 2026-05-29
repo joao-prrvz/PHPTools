@@ -22,21 +22,21 @@ class SQLBuilderTest extends TestCase {
     public function get_columns() {
         $builder = new SQLBuilder(User::class);
         $columns = $builder->columns;
-        $this->assertEquals(["id", "email", "name", "created_at"], array_values($columns));
+        $this->assertEquals(["id", "email", "name", "created_at", "type"], array_values($columns));
     }
 
     #[Test]
     public function get_columns_to_insert() {
         $builder = new SQLBuilder(User::class);
         $columns = $builder->columnsToInsert;
-        $this->assertEquals(["email", "name"], array_values($columns));
+        $this->assertEquals(["email", "name", "type"], array_values($columns));
     }
 
     #[Test]
     public function get_columns_to_update() {
         $builder = new SQLBuilder(User::class);
         $columns = $builder->columnsToUpdate;
-        $this->assertEquals(["email", "name"], array_values($columns));
+        $this->assertEquals(["email", "name", "type"], array_values($columns));
     }
 
     #[Test]
@@ -47,7 +47,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($ctx->users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User`",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User`",
             $query
         );
     }
@@ -61,7 +61,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` = ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE `User`.`email` = ?",
             $query
         );
     }
@@ -88,7 +88,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` IS ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE `User`.`email` IS ?",
             $query
         );
     }
@@ -102,7 +102,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`email` LIKE ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE `User`.`email` LIKE ?",
             $query
         );
     }
@@ -129,7 +129,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? AND `User`.`id` = ?)",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE (`User`.`email` = ? AND `User`.`id` = ?)",
             $query
         );
     }
@@ -145,7 +145,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query
         );
     }
@@ -159,7 +159,7 @@ class SQLBuilderTest extends TestCase {
         $builder = $ref->getProperty("builder")->getValue($users);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE (`User`.`email` = ? OR `User`.`id` = ?)",
+            "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at`, `User`.`type` FROM `User` WHERE (`User`.`email` = ? OR `User`.`id` = ?)",
             $query
         );
     }
@@ -170,7 +170,7 @@ class SQLBuilderTest extends TestCase {
         $builder->query = new InsertQuery($builder->table, $builder->columnsToInsert, 1);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "INSERT INTO `User` (`email`, `name`) VALUES (?, ?)",
+            "INSERT INTO `User` (`email`, `name`, `type`) VALUES (?, ?, ?)",
             $query
         );
     }
@@ -181,7 +181,7 @@ class SQLBuilderTest extends TestCase {
         $builder->query = new InsertQuery($builder->table, $builder->columnsToInsert, 4);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "INSERT INTO `User` (`email`, `name`) VALUES (?, ?), (?, ?), (?, ?), (?, ?)",
+            "INSERT INTO `User` (`email`, `name`, `type`) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?), (?, ?, ?)",
             $query
         );
     }
@@ -192,7 +192,7 @@ class SQLBuilderTest extends TestCase {
         $builder->query = new UpdateQuery($builder->table, $builder->columnsToUpdate, [new SQLCondition("`User`.`id` = ?")]);
         $query = $builder->buildQuery();
         $this->assertEquals(
-            "UPDATE `User` SET `email` = ?, `name` = ? WHERE `User`.`id` = ?",
+            "UPDATE `User` SET `email` = ?, `name` = ?, `type` = ? WHERE `User`.`id` = ?",
             $query
         );
     }

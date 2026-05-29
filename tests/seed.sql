@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS User (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     email      TEXT    NOT NULL UNIQUE,
     name       TEXT    NOT NULL,
-    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+    type TEXT NOT NULL DEFAULT 'member'
 );
 
 CREATE TABLE IF NOT EXISTS Pet (
@@ -19,6 +20,9 @@ INSERT INTO User (email, name) VALUES
     ('bob@example.com',   'Bob'),
     ('carol@example.com', 'Carol'),
     ('mark@example.com', 'Mark');
+
+INSERT INTO User (email, name, type) VALUES
+    ('joao.prrvz@example.com', 'Joao', 'admin');
 
 -- Pets (Alice=3, Bob=2, Carol=1, Mark=0)
 INSERT INTO Pet (name, userId) VALUES

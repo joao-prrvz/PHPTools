@@ -1,15 +1,20 @@
 <?php
 namespace PHPTools\ORM;
 
+use DateTime;
+use Exception;
 use Override;
 use PDO;
 use PHPTools\Core\Collection;
 use PHPTools\Core\ICollection;
+use PHPTools\ORM\Attributes\Date;
 use PHPTools\ORM\Queries\InsertQuery;
 use PHPTools\ORM\Queries\SelectQuery;
 use PHPTools\ORM\Queries\SQLCondition;
 use PHPTools\ORM\Queries\UpdateQuery;
+use Reflection;
 use ReflectionClass;
+use ReflectionNamedType;
 use ReflectionProperty;
 use TypeError;
 
@@ -17,7 +22,6 @@ use TypeError;
  * @template T
  */
 class DBCollection extends Collection {
-    public const string TIMESTAMP_FORMAT = "Y-m-d H:i:s";
 
     private DBContext $ctx;
     public SQLBuilder $builder;
@@ -74,8 +78,8 @@ class DBCollection extends Collection {
             if (!$this->isAssignable($item, $this->itemsType))
                 throw new TypeError("The item at the index of $key isn't of type $this->itemsType");
             foreach ($this->builder->columnsToInsert as $propName => $column) {
-                $reflection = new ReflectionProperty($this->itemsType, $propName);
-                $params[] = $reflection->getValue($item);
+                $ref = new ReflectionProperty($this->itemsType, $propName);
+                $params[] = $this->convertComplexToPrimitive($ref, $ref->getValue($item));
             }
         }
         $collection = clone $this;
@@ -98,13 +102,13 @@ class DBCollection extends Collection {
                 throw new TypeError("The item at the index of $index isn't of type $this->itemsType");
             $conditions = [];
             foreach ($builder->columnsToUpdate as $propName => $column) {
-                $reflection = new ReflectionProperty($this->itemsType, $propName);
-                $params[] = $reflection->getValue($item);
+                $ref = new ReflectionProperty($this->itemsType, $propName);
+                $params[] = $this->convertComplexToPrimitive($ref, $ref->getValue($item));
             }
             foreach ($builder->primaryKeys as $propName => $key) {
-                $reflection = new ReflectionProperty($this->itemsType, $propName);
+                $ref = new ReflectionProperty($this->itemsType, $propName);
                 $conditions[] = new SQLCondition("`$this->table`.`$key` = ?");
-                $params[] = $reflection->getValue($item);
+                $params[] = $this->convertComplexToPrimitive($ref, $ref->getValue($item));
             }
             $builder->params = $params;
             $builder->query = new UpdateQuery($this->table, $builder->columnsToUpdate, $conditions);
@@ -199,11 +203,56 @@ class DBCollection extends Collection {
             $obj = $refClass->newInstance();
             foreach ($this->builder->columns as $propName => $column) {
                 $prop = $refClass->getProperty($propName);
-                $prop->setValue($obj, $entity[$column]);
+                $prop->setValue($obj, $this->convertPrimitiveToComplex($prop, $entity[$column]));
             }
             $result[] = $obj;
         }
         return $result;
+    }
+
+    private function convertPrimitiveToComplex(ReflectionProperty $refProp, mixed $value): mixed {
+        $refType = $refProp->getType();
+        if (!($refType instanceof ReflectionNamedType))
+            return $value;    
+        $typeName = $refType->getName();
+        switch ($typeName) {
+            case DateTime::class:
+                if (is_int($value) || is_float($value))
+                    return DateTime::createFromTimestamp($value);
+                $refDateAttr = $refProp->getAttributes(Date::class)[0] ?? null;
+                $dateClass = Date::class;
+                if ($refDateAttr === null)
+                    throw new Exception("Please use the Attribute {$dateClass} for a property of type DateTime");
+                $dateAttr = $refDateAttr->newInstance();
+                return DateTime::createFromFormat($dateAttr->format, $value);
+            
+            default:
+                if (enum_exists($typeName))
+                    return $typeName::from($value);
+                break;
+        }
+        return $value;
+    }
+
+    private function convertComplexToPrimitive(ReflectionProperty $refProp, mixed $value) {
+        $refType = $refProp->getType();
+        if (!($refType instanceof ReflectionNamedType))
+            return $value;    
+        $typeName = $refType->getName();
+        switch ($typeName) {
+            case DateTime::class:
+                $refDateAttr = $refProp->getAttributes(Date::class)[0] ?? null;
+                if ($refDateAttr === null)
+                    return $value->getTimestamp();
+                $dateAttr = $refDateAttr->newInstance();
+                return $value->format($dateAttr->format);
+            
+            default:
+                if (enum_exists($typeName))
+                    return $value->value;
+                break;
+        }
+        return $value;
     }
 
     public function run(SQLBuilder $builder) {
