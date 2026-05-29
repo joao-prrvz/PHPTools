@@ -5,6 +5,9 @@ use PHPTools\Schemas\Attributes as SA;
 use PHPTools\Schemas\Attributes\ErrorType;
 use PHPTools\Schemas\Attributes\IMutate;
 use PHPTools\Schemas\Attributes\Validates\IValidate;
+use PHPTools\Schemas\Exceptions\ClassConvertException;
+use PHPTools\Schemas\Exceptions\EnumConvertException;
+use PHPTools\Schemas\Exceptions\PrimitiveConvertException;
 use PHPTools\Schemas\Traits\TypeConverter;
 use ReflectionAttribute;
 use ReflectionClass;
@@ -118,6 +121,8 @@ class Validator {
                 $errors[] = $e->type;
             } catch (ClassConvertException $e) {
                 $this->addError($field, $e->errors);
+            } catch (EnumConvertException $e) {
+                $this->addError($field, $e->getMessage());
             }
         }
         if (count($errors) >= count($refTypes)) {

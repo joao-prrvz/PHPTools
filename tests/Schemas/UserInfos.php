@@ -15,4 +15,5 @@ class UserInfos {
     public ?WebsiteSchema $website;
     #[ArrayType([UserInfos::class])]
     public array $friends;
+    public UserType $type;
 }

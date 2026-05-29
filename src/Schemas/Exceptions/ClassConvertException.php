@@ -1,5 +1,5 @@
 <?php
-namespace PHPTools\Schemas;
+namespace PHPTools\Schemas\Exceptions;
 
 use Exception;
 

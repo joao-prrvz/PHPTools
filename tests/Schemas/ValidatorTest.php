@@ -26,7 +26,8 @@ class ValidatorTest extends TestCase {
                 "rating" => 4.5,
                 "tags" => ["portfolio"]
             ],
-            "friends" => []
+            "friends" => [],
+            "type" => "admin",
         ];
     }
 
@@ -45,6 +46,7 @@ class ValidatorTest extends TestCase {
             $user->birthday = "2000-01-01";
             $user->website = $website;
             $user->friends = [];
+            $user->type = UserType::ADMIN;
             return $user;
         }
     }
@@ -57,7 +59,7 @@ class ValidatorTest extends TestCase {
 
     #[Test]
     public function get_fields() {
-        $expected = ["email","name","birthday","website","friends"];
+        $expected = ["email","name","birthday","website","friends", "type"];
         $validator = new Validator(UserInfos::class, $this->data);
         $fields = array_values($validator->fields);
         $this->assertSame($expected, $fields);
@@ -197,6 +199,8 @@ class ValidatorTest extends TestCase {
                 ["birthday", "Bad format"],
             "invalid friends array type" => 
                 ["friends", ["csd"]],
+            "invalid enum value" => 
+                ["type", "guest"],
         ];
     }
 
@@ -254,6 +258,8 @@ class ValidatorTest extends TestCase {
                 ["birthday", "Bad format", ["The time given must be of the format Y-m-d"]],
             "invalid friends array type" => 
                 ["friends", ["csd"], ["One or more items are invalide"]],
+            "invalid enum value" => 
+                ["type", "guest", ["Must be admin or member"]],
         ];
     }
 

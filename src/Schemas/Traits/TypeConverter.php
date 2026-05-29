@@ -2,16 +2,31 @@
 namespace PHPTools\Schemas\Traits;
 
 use PHPTools\Schemas\Attributes as SA;
-use PHPTools\Schemas\ClassConvertException;
-use PHPTools\Schemas\PrimitiveConvertException;
+use PHPTools\Schemas\Exceptions\ClassConvertException;
+use PHPTools\Schemas\Exceptions\EnumConvertException;
+use PHPTools\Schemas\Exceptions\PrimitiveConvertException;
 use PHPTools\Schemas\Validator;
 use ReflectionProperty;
 
 trait TypeConverter {
     private function tryConvertType(ReflectionProperty $refProp, string $typeName, mixed $value, bool $allowsNull): mixed {
-        $convertedValue = $value;
         if ($allowsNull && $value === null)
-            return null; 
+            return null;
+
+        if (class_exists($typeName) && is_array($value)) {
+            $validator = new Validator($typeName, $value);
+            $value = $validator->parse();
+            if ($value === null)
+                throw new ClassConvertException($typeName, $validator->errors);
+        }
+
+        if (enum_exists($typeName)) {
+            $value = $typeName::tryFrom($value);
+            if ($value === null)
+                throw new EnumConvertException($typeName);
+            return $value;
+        }
+
         if ($this->propretyIsStrict($refProp)) {
             if (get_debug_type($value) === $typeName)
                 return $value;
@@ -32,14 +47,6 @@ trait TypeConverter {
                 $value = (string)$value;
                 break;
             default:
-                if (class_exists($typeName) && is_array($value)) {
-                    $validator = new Validator($typeName, $value);
-                    $value = $validator->parse();
-                    if ($value === null)
-                        throw new ClassConvertException($typeName, $validator->errors);
-                }
-                    
-                else
                     $value = get_debug_type($value) === $typeName ? $value : null;
                 break;
         }
