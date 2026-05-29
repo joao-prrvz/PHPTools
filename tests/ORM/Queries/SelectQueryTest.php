@@ -11,7 +11,7 @@ class SelectQueryTest extends TestCase {
 
     #[Test]
     public function to_string() {
-        $selectQuery = new SelectQuery("User", ["id", "email"]);
+        $selectQuery = new SelectQuery("User", ["`User`.`id`", "`User`.`email`"]);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User`", "$selectQuery");
     }
 
@@ -21,7 +21,7 @@ class SelectQueryTest extends TestCase {
             new SQLCondition("`User`.`id` = ?"),
             new SQLCondition("`User`.`email` = ?"),
         ];
-        $selectQuery = new SelectQuery("User", ["id", "email"], $conditions);
+        $selectQuery = new SelectQuery("User", ["`User`.`id`", "`User`.`email`"], $conditions);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?", "$selectQuery");
     }
 
@@ -31,7 +31,7 @@ class SelectQueryTest extends TestCase {
             new SQLCondition("`User`.`id` = ?"),
             new SQLCondition("`User`.`email` = ?", SQLOperator::Or),
         ];
-        $selectQuery = new SelectQuery("User", ["id", "email"], $conditions);
+        $selectQuery = new SelectQuery("User", ["`User`.`id`", "`User`.`email`"], $conditions);
         $this->assertEquals("SELECT `User`.`id`, `User`.`email` FROM `User` WHERE `User`.`id` = ? OR `User`.`email` = ?", "$selectQuery");
     }
 }

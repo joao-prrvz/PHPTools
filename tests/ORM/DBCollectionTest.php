@@ -2,6 +2,7 @@
 namespace PHPTools\Tests\ORM;
 
 use DateTime;
+use PHPTools\Tests\Models\User;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -67,6 +68,30 @@ class DBCollectionTest extends TestCase {
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query
         );
+    }
+
+    #[Test]
+    public function select_specific_column() {
+        $user = $this->ctx->users->select(fn($u) => $u->email)->first();
+        $this->assertEquals("alice@example.com", $user);
+    }
+
+    #[Test]
+    public function select_specific_column_with_alias() {
+        $user = $this->ctx->users->select(fn($u) => ["E-mail" => $u->email])->first();
+        $this->assertEquals(["E-mail" => "alice@example.com"], $user);
+    }
+
+    #[Test]
+    public function select_specific_columns() {
+        $user = $this->ctx->users->select(fn($u) => [$u->email, $u->id])->first();
+        $this->assertEquals(["alice@example.com", 1], $user);
+    }
+
+    #[Test]
+    public function select_specific_columns_with_alias() {
+        $user = $this->ctx->users->select(fn($u) => ["E-mail" => $u->email, "ID" => $u->id])->first();
+        $this->assertEquals(["E-mail" => "alice@example.com", "ID" => 1], $user);
     }
 
     public function getTime(callable $callable): float {

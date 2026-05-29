@@ -3,7 +3,6 @@ namespace PHPTools\Core;
 
 use Countable;
 use Iterator;
-use Override;
 use TypeError;
 
 /**
@@ -22,7 +21,7 @@ class Collection implements Iterator, ICollection, Countable {
     /**
      * @param class-string<T> $itemsType
      */
-    public function __construct(string $itemsType) {
+    public function __construct(string $itemsType, public bool $nullable = false) {
         $this->itemsType = $itemsType;
     }
     
@@ -104,9 +103,9 @@ class Collection implements Iterator, ICollection, Countable {
         $array = [];
         $type = "null";
         foreach ($this->items as $key => $value) {
-            if ($key === 0)
-                $type = get_debug_type($value);
             $array[] = $selector($value);
+            if ($key === 0)
+                $type = get_debug_type($array[$key]);
         }
         $collection = new Collection($type);
         $collection->add(...$array);
@@ -160,6 +159,8 @@ class Collection implements Iterator, ICollection, Countable {
 
     protected function isAssignable(mixed $value, string $targetType): bool {
         if (class_exists($targetType) && $value instanceof $targetType)
+            return true;
+        if (is_null($value) && $this->nullable)
             return true;
         $compatibleTypes = [
             "int" => ["int"],

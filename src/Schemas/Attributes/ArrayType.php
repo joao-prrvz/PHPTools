@@ -10,7 +10,6 @@ use ReflectionProperty;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 class ArrayType implements IValidate, IMutate {
-    public string $message;
 
     use TypeConverter, DefaultMessage;
 
@@ -22,9 +21,8 @@ class ArrayType implements IValidate, IMutate {
      *
      * @param class-string[] ...$types
      */
-    public function __construct(array $types, string $message = "One or more items are invalide") {
+    public function __construct(array $types, public string $message = "One or more items are invalide") {
         $this->types = $types;
-        $this->message = $message;
     }
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {

@@ -52,7 +52,6 @@ class WhereParser implements IParser {
 
             $this->conditions[] = new SQLCondition($result['sql']);
             $this->params = array_merge($this->params, $result['params']);
-
             return true;
 
         } catch (Throwable $e) {

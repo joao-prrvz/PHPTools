@@ -114,6 +114,50 @@ class DBCollection extends Collection {
         return parent::where($predicate);
     }
 
+    #[Override]
+    public function select(callable $selector): ICollection {
+        $collection = $this->clone();
+        $result = $collection->builder->parseSelect($selector);
+        if($result) {
+            $sttmt = $this->ctx->run($collection->builder->buildQuery(), $collection->builder->params);
+            $selectMeta = [
+                "columns" => $result->select,
+                "isAssoc" => $result->isAssoc,
+                "count"   => count($result->select),
+            ];
+            $items = array_map(fn($r) => $this->hydrateSelectRow($r, $selectMeta), $sttmt->fetchAll(PDO::FETCH_ASSOC));
+            $columnNames = $result->selectColumnNames;
+            $propName = array_search($columnNames[0], $collection->builder->columns);
+            $type = count($columnNames) > 1 || $result->isAssoc ? "array" : $this->getPropertyType($propName);
+            $collection = new Collection($type, true);
+            $collection->add(...$items);
+            return $collection;
+        }
+        return parent::where($selector);
+    }
+
+    private function getPropertyType(string $propName): string {
+        $refProp = new ReflectionClass($this->itemsType)->getProperty($propName);
+        return $refProp->getType()->getName() ?? $refProp->getType()->getTypes()[0]->getName();
+    }
+
+    private function hydrateSelectRow(array $row, array $meta) {
+
+        // Single column, no alias → return scalar
+        if ($meta["count"] === 1 && !$meta["isAssoc"]) {
+            return array_values($row)[0];
+        }
+
+        // Multiple columns, no alias → numeric array
+        if (!$meta["isAssoc"]) {
+            return array_values($row);
+        }
+
+        // Associative → return as-is
+        return $row;
+    }
+
+
     /**
      * @return ?T
      */

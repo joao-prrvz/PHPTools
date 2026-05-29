@@ -1,11 +1,10 @@
 <?php
 namespace PHPTools\ORM;
 
-use PhpParser\Node\Expr\BinaryOp as OP;
 use PHPTools\ORM\Attributes as DB;
 use PHPTools\ORM\Queries\SelectQuery;
 
-use Exception;
+use PHPTools\ORM\Parsers\SelectParser;
 use PHPTools\ORM\Queries\IQuery;
 use PHPTools\ORM\Parsers\WhereParser;
 use ReflectionClass;
@@ -93,8 +92,7 @@ class SQLBuilder {
     public function __construct(string $modelClass) {
         $this->modelClass = $modelClass;
         $this->ref = new ReflectionClass($this->modelClass);
-        $this->query = new SelectQuery($this->table, $this->columns);
-        $this->query->columns = array_values($this->columns);
+        $this->query = new SelectQuery($this->table, $this->formatColumns());
     }
 
     public function buildQuery(): string {
@@ -136,9 +134,26 @@ class SQLBuilder {
             $this->params = array_merge($parser->params, $this->params);
             return true;
         }
-        $this->query = new SelectQuery($this->table, $this->columns, $parser->conditions);
+        $this->query = new SelectQuery($this->table, $this->formatColumns(), $parser->conditions);
         $this->params = $parser->params;
-        return false;
+        return true;
+    }
+
+    private function formatColumns() {
+        return array_map(fn(string $c) => "`{$this->table}`.`{$c}`", $this->columns);
+    }
+
+    public function parseSelect(callable $selector): SelectParser|false {
+        $parser = new SelectParser($this->table, $this->columns);
+        $result = $parser->parse($selector);
+        if (!$result)
+            return false;
+        if ($this->query instanceof SelectQuery) {
+            $this->query->columns = $parser->select;
+            return $parser;
+        }
+        $this->query = new SelectQuery($this->table, $parser->select);
+        return $parser;
     }
     
     public function clone() {
