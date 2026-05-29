@@ -2,6 +2,7 @@
 namespace PHPTools\Schemas\Attributes;
 
 use Attribute;
+use Exception;
 use PHPTools\Schemas\Attributes\Validates\IValidate;
 use PHPTools\Schemas\Traits\DefaultMessage;
 use PHPTools\Schemas\Traits\TypeConverter;
@@ -21,27 +22,37 @@ class ArrayType implements IValidate, IMutate {
      *
      * @param class-string[] ...$types
      */
-    public function __construct(array $types, ?string $message = null) {
+    public function __construct(array $types, string $message = "One or more items are invalide") {
         $this->types = $types;
-        $this->message = $this->default($message, "Must be of type". implode("or ", $this->types));
+        $this->message = $message;
     }
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {
         $result = [];
         $allowsNull = in_array("null", $this->types);
         foreach ($value as $key => $v) {
-            foreach ($this->types as $type)
-                $result[] = $this->tryConvertType($refProp, $type, $v, $allowsNull);
+            $errorCount = 0;
+            foreach ($this->types as $type) {
+                try {
+                    $this->tryConvertType($refProp, $type, $v, $allowsNull);
+                }
+                catch(Exception $e) {
+                    $errorCount ++;
+                }
+            }
+            if ($errorCount >= count($this->types))
+                return false;
         }
-        return in_array(true, $result) || count($result) === 0;
+        return true;
     }
 
     public function mutate(ReflectionProperty $refProp, mixed $value): mixed {
         $allowsNull = in_array("null", $this->types);
         foreach ($value as $key => $v) {
             foreach ($this->types as $type) {
-                $this->tryConvertType($refProp, $type, $v, $allowsNull);
-                $value[$key] = $v;
+                try {
+                    $value[$key] = $this->tryConvertType($refProp, $type, $v, $allowsNull);
+                } catch (\Throwable) { }
             }
         }
         return $value;

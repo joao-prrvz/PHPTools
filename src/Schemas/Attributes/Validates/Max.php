@@ -10,7 +10,7 @@ class Max implements IValidate{
 
     public function __construct(private float $value, ?string $message = null){
         if ($message === null)
-            $message = "Must be bigger or equal to $value";
+            $message = "Must be smaller or equal to $value";
         $this->message = $message;
     }
 

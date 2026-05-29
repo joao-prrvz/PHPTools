@@ -2,43 +2,51 @@
 namespace PHPTools\Schemas\Traits;
 
 use PHPTools\Schemas\Attributes as SA;
+use PHPTools\Schemas\ClassConvertException;
+use PHPTools\Schemas\PrimitiveConvertException;
 use PHPTools\Schemas\Validator;
 use ReflectionProperty;
 
 trait TypeConverter {
-    private function tryConvertType(ReflectionProperty $refProp, string $typeName, mixed &$value, bool $allowsNull): bool {
+    private function tryConvertType(ReflectionProperty $refProp, string $typeName, mixed $value, bool $allowsNull): mixed {
         $convertedValue = $value;
         if ($allowsNull && $value === null)
-            return true; 
-        if ($this->propretyIsStrict($refProp))
-            return get_debug_type($value) === $typeName;
+            return null; 
+        if ($this->propretyIsStrict($refProp)) {
+            if (get_debug_type($value) === $typeName)
+                return $value;
+            throw new PrimitiveConvertException($typeName);
+        }
+            
         switch($typeName) {
             case "int":
-                $convertedValue = $this->toInt($value);
+                $value = $this->toInt($value);
                 break;
             case "float":
-                $convertedValue = $this->toFloat($value);
+                $value = $this->toFloat($value);
                 break;
             case "bool":
-                $convertedValue = $this->toBool($value);
+                $value = $this->toBool($value);
                 break;
             case "string":
-                $convertedValue = (string)$value;
+                $value = (string)$value;
                 break;
             default:
                 if (class_exists($typeName) && is_array($value)) {
-                    $v = new Validator($typeName, $value);
-                    $convertedValue = $v->parse();
+                    $validator = new Validator($typeName, $value);
+                    $value = $validator->parse();
+                    if ($value === null)
+                        throw new ClassConvertException($typeName, $validator->errors);
                 }
+                    
                 else
-                    $convertedValue = get_debug_type($value) === $typeName ? $value : null;
+                    $value = get_debug_type($value) === $typeName ? $value : null;
                 break;
         }
 
-        if ($convertedValue === null)
-            return false;
-        $value = $convertedValue;
-        return true;
+        if ($value === null)
+            throw new PrimitiveConvertException($typeName);
+        return $value;
     }
 
     private function toInt(mixed $value): ?int {

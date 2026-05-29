@@ -106,6 +106,18 @@ class ValidatorTest extends TestCase {
         $this->assertNull($validator->parse());
     }
 
+    #[Test, DataProvider("errorMessagesCases")]
+    public function error_messages(string $path, mixed $value, array $expected) {
+        $data = $this->data;
+        if ($value === "__unset__")
+            self::unsetPath($data, $path);
+        else
+            self::setPath($data, $path, $value);
+        $validator = new Validator(UserInfos::class, $data);
+        $validator->parse();
+        $this->assertSame($expected, self::getPath($validator->errors, $path));
+    }
+
     #[Test, DataProvider("mutateCases")]
     public function mutate_cases(string $path, mixed $value, mixed $expected) {
         $data = $this->data;
@@ -209,6 +221,39 @@ class ValidatorTest extends TestCase {
                 ["<script></script>"],
                 ["&lt;script&gt;&lt;/script&gt;"],
             ],
+        ];
+    }
+
+    public static function errorMessagesCases() {
+        return [
+            "strict type mismatch" => 
+                ["name", 10, ["Must be of type string"]],
+            "missing required field" => 
+                ["email", "__unset__", ["Is required"]],
+            "invalid email" => 
+                ["email", "john", ["Is not a valide email"]],
+            "invalid ip" => 
+                ["website.ip", "1.1.1", ["Is not a valide ip address"]],
+            "invalid url" => 
+                ["website.url", "not an url", ["Is not a valide url"]],
+            "invalid domain" => 
+                ["website.domain", "not a domain", ["Is not a valide domain"]],
+            "rating too small" => 
+                ["website.rating", -1, ["Must be bigger or equal to 1"]],
+            "rating too large" => 
+                ["website.rating", 9999, ["Must be smaller or equal to 5"]],
+            "name too short" => 
+                ["name", "J", ["Must have more or equal to 2 characters"]],
+            "name too long" => 
+                ["name", "Way too long of a test name", ["Must have less or equal to 20 characters"]],
+            "tags count too small" =>
+                ["website.tags", [], ["Must have more or equal to 1 items"]],
+            "tags count too large" =>
+                ["website.tags", ["a","b","c","d"], ["Must have less or equal to 3 items"]],
+            "invalid date" =>
+                ["birthday", "Bad format", ["The time given must be of the format Y-m-d"]],
+            "invalid friends array type" => 
+                ["friends", ["csd"], ["One or more items are invalide"]],
         ];
     }
 

@@ -12,8 +12,6 @@ use ReflectionNamedType;
 use ReflectionProperty;
 use ReflectionUnionType;
 
-use function PHPSTORM_META\elementType;
-
 /**
  * @template T
  */
@@ -85,10 +83,13 @@ class Validator {
         return false;
     }
 
-    private function addError(string $field, string $message) {
+    private function addError(string $field, string|array $message) {
         if (!array_key_exists($field, $this->errors))
             $this->errors[$field] = [];
-        $this->errors[$field][] = $message;
+        if (is_array($message))
+            $this->errors[$field] = $message;
+        else
+            $this->errors[$field][] = $message;
     }
 
     private function setValue(ReflectionProperty $refProp, object $instance, string $field) {
@@ -99,11 +100,20 @@ class Validator {
             $refTypes[] = $refType;
         else if ($refType instanceof ReflectionUnionType)
             $refTypes = $refType->getTypes();
-        $results = [];
-        foreach ($refTypes as $refType)
-            $results[] = $this->tryConvertType($refProp, $refType->getName(), $value, $refType->allowsNull());
-        if (!in_array(true, $results))
+        $errors = [];
+        foreach ($refTypes as $refType) {
+            try {
+                $value = $this->tryConvertType($refProp, $refType->getName(), $value, $refType->allowsNull());
+            } catch (PrimitiveConvertException $e) {
+                $errors[] = $e->type;
+            } catch (ClassConvertException $e) {
+                $this->addError($field, $e->errors);
+            }
+        }
+        if (count($errors) >= count($refTypes)) {
             $this->addError($field, $this->generateTypeErrorMessage($refProp, $refTypes));
+            return;
+        }
         foreach ($refProp->getAttributes(IValidate::class, ReflectionAttribute::IS_INSTANCEOF) as $refValidate) {
             $attrValidate = $refValidate->newInstance();
             if (!$attrValidate->validate($refProp, $value))
