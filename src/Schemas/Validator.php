@@ -39,12 +39,22 @@ class Validator {
     public array $fields {
         get {
             $fields = [];
-            $refProps = $this->refClass->getProperties();
+            $refProps = $this->getNotIgnoredProperties();
             foreach ($refProps as $refProp) {
                 $fields[$refProp->name] = $this->getPropretyFieldName($refProp);
             }
             return $fields;
         }
+    }
+
+    private function getNotIgnoredProperties() {
+        $refProps = $this->refClass->getProperties();
+        $props = [];
+        foreach ($refProps as $refProp) {
+            if (!isset($refProp->getAttributes(SA\Ignore::class)[0]))
+                $props[] = $refProp;
+        }
+        return $props;
     }
 
     /**
