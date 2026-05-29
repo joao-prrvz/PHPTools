@@ -3,8 +3,7 @@
 namespace PHPTools\Core;
 
 class Sort {
-
-    public static function merge(array $array, ?callable $comparer = null): array {
+    public static function merge(array $array, ?callable $comparer = null, bool $desc = false): array {
         $itemsList = [];
         foreach ($array as $item)
             $itemsList[] = [$item];
@@ -16,7 +15,7 @@ class Sort {
             for ($i = 0; $i < count($itemsListCopy) - 1; $i += 2) {
                 $currentItems = $itemsListCopy[$i];
                 $nextItems = $itemsListCopy[$i + 1];
-                $itemsList[] = static::compareLists($currentItems, $nextItems, $comparer);
+                $itemsList[] = static::compareLists($currentItems, $nextItems, $comparer, $desc);
             }
 
             if (count($itemsListCopy) % 2 !== 0)
@@ -26,13 +25,14 @@ class Sort {
         return $itemsList[0];
     }
 
-    private static function compareLists(array $currentItems, array $nextItems, ?callable $comparer = null): array {
+    private static function compareLists(array $currentItems, array $nextItems, ?callable $comparer = null, bool $desc = false): array {
         $items = [];
 
         while (count($currentItems) > 0 && count($nextItems) > 0) {
             $currentItem = $currentItems[0];
             $nextItem = $nextItems[0];
-            if (static::compareItems($currentItem, $nextItem, $comparer) <= 0) {
+            $condition = static::compareItems($currentItem, $nextItem, $comparer) <= 0;
+            if ($condition != $desc) {
                 array_splice($currentItems, 0, 1);
                 $items[] = $currentItem;
             }

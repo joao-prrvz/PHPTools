@@ -35,6 +35,14 @@ interface ICollection extends Countable {
     public function orderBy(callable $comparer): ICollection;
 
     /**
+     * Undocumented function
+     * @template TComparer
+     * @param callable(T): TComparer $comparer
+     * @return ICollection<T>
+     */
+    public function orderByDesc(callable $comparer): ICollection;
+
+    /**
      * @param T $value
      * @return boolean
      */

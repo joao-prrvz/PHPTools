@@ -125,6 +125,19 @@ class Collection implements Iterator, ICollection, Countable {
         return $collection;
     }
 
+    /**
+     * Creates
+     * 
+     * @template TComparer
+     * @param callable(T): TComparer $comparer
+     * @return ICollection<T>
+     */
+    public function orderByDesc(callable $comparer): ICollection {
+        $collection = new Collection($this->itemsType);
+        $collection->add(... Sort::merge($this->items, $comparer, true));
+        return $collection;
+    }
+
 
     public function contains(mixed $value): bool {
         return in_array($value, $this->items, true);
