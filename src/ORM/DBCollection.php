@@ -6,6 +6,7 @@ use PDO;
 use PHPTools\Core\Collection;
 use PHPTools\Core\ICollection;
 use PHPTools\ORM\Queries\InsertQuery;
+use PHPTools\ORM\Queries\SelectQuery;
 use PHPTools\ORM\Queries\SQLCondition;
 use PHPTools\ORM\Queries\UpdateQuery;
 use ReflectionClass;
@@ -41,6 +42,25 @@ class DBCollection extends Collection {
         if ($builder === null)
             $builder = new SQLBuilder($modelClass);
         $this->builder = $builder;
+    }
+
+    #[Override]
+    public function count(): int {
+        $collection = $this->clone();
+        $collection->builder->query->columns = ["COUNT(*)"];
+        $sttmt = $this->run($collection->builder);
+        return $sttmt->fetch(PDO::FETCH_ASSOC)["COUNT(*)"];
+    }
+
+    #[Override]
+    public function take(int $limit, int $offset = 0): ICollection {
+        $collection = $this->clone();
+        $query = $collection->builder->query;
+        if ($query instanceof SelectQuery) {
+            $query->limit = $limit;
+            $query->offset = $offset;
+        }
+        return $collection;
     }
 
     /**
@@ -163,7 +183,7 @@ class DBCollection extends Collection {
      */
     #[Override]
     public function first(): mixed {
-        return $this->take(1, 0)[0] ?? null ;
+        return $this->take(1, 0)->toArray()[0] ?? null;
     }
 
     /**

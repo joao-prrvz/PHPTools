@@ -152,9 +152,11 @@ class Collection implements Iterator, ICollection, Countable {
         return $this->items[0];
     }
 
-    public function take(int $limit, int $offset = 0): array {
+    public function take(int $limit, int $offset = 0): ICollection {
         $items = [... $this->items];
-        return array_splice($items, $offset, $limit);
+        $collection = new Collection($this->itemsType, $this->nullable);
+        $collection->add(... array_splice($items, $offset, $limit));
+        return $collection;
     }
 
     protected function isAssignable(mixed $value, string $targetType): bool {

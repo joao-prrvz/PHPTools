@@ -2,7 +2,7 @@
 namespace PHPTools\Tests\ORM;
 
 use DateTime;
-use PHPTools\Tests\Models\User;
+use PHPTools\ORM\DBCollection;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -64,6 +64,7 @@ class DBCollectionTest extends TestCase {
             ->where(fn($u) => $u->email === "hello")
             ->where(fn($u) => $u->id === 1);
         $query = $users->builder->buildQuery();
+        $this->assertInstanceOf(DBCollection::class, $users);
         $this->assertEquals(
             "SELECT `User`.`id`, `User`.`email`, `User`.`name`, `User`.`created_at` FROM `User` WHERE `User`.`id` = ? AND `User`.`email` = ?",
             $query

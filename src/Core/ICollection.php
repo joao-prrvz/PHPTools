@@ -61,5 +61,5 @@ interface ICollection extends Countable {
      */
     public function toArray(): array;
 
-    public function take(int $limit, int $offset = 0): array;
+    public function take(int $limit, int $offset = 0): ICollection;
 }

@@ -130,7 +130,7 @@ class CollectionTest extends TestCase {
     public function collection_take() {
         $collection = new Collection("int");
         $collection->add(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        $result = $collection->take(3, 1);
+        $result = $collection->take(3, 1)->toArray();
         $this->assertSame([2, 3, 4], $result);
     }
 
