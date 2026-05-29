@@ -3,7 +3,6 @@ namespace PHPTools\Tests\Models;
 
 use DateTime;
 use PHPTools\ORM\Attributes as DB;
-use PHPTools\ORM\DBCollection;
 
 class User {
     #[DB\Block]

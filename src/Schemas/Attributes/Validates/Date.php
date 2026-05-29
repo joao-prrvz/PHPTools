@@ -17,6 +17,6 @@ class Date implements IValidate {
     }
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {
-        return DateTime::createFromFormat($this->format, $value) !== false;
+        return ($value instanceof DateTime) || DateTime::createFromFormat($this->format, $value) !== false;
     }
 }

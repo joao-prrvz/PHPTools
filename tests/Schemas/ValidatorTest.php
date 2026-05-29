@@ -1,6 +1,7 @@
 <?php
 namespace PHPTools\Tests\Schemas;
 
+use DateTime;
 use PHPTools\Schemas\Validator;
 use PHPTools\Tests\Schemas\UserInfos;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -43,7 +44,7 @@ class ValidatorTest extends TestCase {
             $user = new UserInfos();
             $user->email = "johndoe@example.com";
             $user->name = "John";
-            $user->birthday = "2000-01-01";
+            $user->birthday = DateTime::createFromFormat("Y-m-d", "2000-01-01");
             $user->website = $website;
             $user->friends = [];
             $user->type = UserType::ADMIN;

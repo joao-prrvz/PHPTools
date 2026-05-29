@@ -3,7 +3,6 @@ namespace PHPTools\Tests\ORM;
 
 use DateTime;
 use PHPTools\ORM\DBCollection;
-use PHPTools\Tests\Models\UserType;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -100,7 +99,6 @@ class DBCollectionTest extends TestCase {
         $user = $this->ctx->users
             //->where(fn($u) => $u->type === UserType::ADMIN)
             ->select(fn($u) => [$u->email, $u->type]);
-        var_dump($user);
     }
 
     public function getTime(callable $callable): float {

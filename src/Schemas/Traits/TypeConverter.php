@@ -1,8 +1,11 @@
 <?php
 namespace PHPTools\Schemas\Traits;
 
+use DateTime;
 use PHPTools\Schemas\Attributes as SA;
-use PHPTools\Schemas\Exceptions\ClassConvertException;
+use PHPTools\Schemas\Attributes\Validates\Date;
+use PHPTools\Schemas\Exceptions\DateConvertException;
+use PHPTools\Schemas\Exceptions\SchemaConvertException;
 use PHPTools\Schemas\Exceptions\EnumConvertException;
 use PHPTools\Schemas\Exceptions\PrimitiveConvertException;
 use PHPTools\Schemas\Validator;
@@ -13,11 +16,35 @@ trait TypeConverter {
         if ($allowsNull && $value === null)
             return null;
 
-        if (class_exists($typeName) && is_array($value)) {
-            $validator = new Validator($typeName, $value);
-            $value = $validator->parse();
-            if ($value === null)
-                throw new ClassConvertException($typeName, $validator->errors);
+        if (class_exists($typeName) ) {
+            if (is_array($value)) {
+
+                $validator = new Validator($typeName, $value);
+                $value = $validator->parse();
+                if ($value === null)
+                    throw new SchemaConvertException($typeName, $validator->errors);
+            }
+            if ($typeName == DateTime::class) {
+                $refDateAttr = $refProp->getAttributes(Date::class)[0] ?? null;
+                if ($refDateAttr === null) {
+                    if(is_int($value) || is_float($value)) {
+                        $date = DateTime::createFromTimestamp($value);
+                        if (!$date)
+                            throw new DateConvertException("Is a bad formated timestamp");
+                    }
+                    else
+                        throw new DateConvertException("Must be a timestamp");
+                    return $date;
+                }
+                else {
+                    $dateAttr = $refDateAttr->newInstance();
+                    $date = DateTime::createFromFormat($dateAttr->format, $value);
+                        if (!$date)
+                            throw new DateConvertException($dateAttr->message);
+                        return $date;
+                }
+
+            }
         }
 
         if (enum_exists($typeName)) {
