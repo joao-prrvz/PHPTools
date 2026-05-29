@@ -46,7 +46,7 @@ class DBCollection extends Collection {
 
     #[Override]
     public function count(): int {
-        $collection = $this->clone();
+        $collection = clone $this;
         $collection->builder->query->columns = ["COUNT(*)"];
         $sttmt = $this->run($collection->builder);
         return $sttmt->fetch(PDO::FETCH_ASSOC)["COUNT(*)"];
@@ -54,7 +54,7 @@ class DBCollection extends Collection {
 
     #[Override]
     public function take(int $limit, int $offset = 0): ICollection {
-        $collection = $this->clone();
+        $collection = clone $this;
         $query = $collection->builder->query;
         if ($query instanceof SelectQuery) {
             $query->limit = $limit;
@@ -78,7 +78,7 @@ class DBCollection extends Collection {
                 $params[] = $reflection->getValue($item);
             }
         }
-        $collection = $this->clone();
+        $collection = clone $this;
         $collection->builder->query = new InsertQuery($this->table, $this->builder->columnsToInsert, count($items));
         $builder = $collection->builder;
         $builder->params = array_merge($params, $builder->params);
@@ -91,7 +91,7 @@ class DBCollection extends Collection {
      */
     public function update(mixed ...$items) {
         $params = [];
-        $collection = $this->clone();
+        $collection = clone $this;
         $builder = $collection->builder;
         foreach ($items as $index => $item) {
             if (!$this->isAssignable($item, $this->itemsType))
@@ -113,21 +113,13 @@ class DBCollection extends Collection {
         return $collection;
     }
 
-    public function clone(): DBCollection {
-        return new DBCollection($this->itemsType, $this->ctx, $this->builder->clone());
-    }
-
-    public function __clone() {
-        $this->builder = clone $this->builder;
-    }
-
     /**
      * @param callable(T): bool $predicate
      * @return ICollection<T>
      */
     #[Override]
     public function where(callable $predicate): ICollection {
-        $collection = $this->clone();
+        $collection = clone $this;
         $result = $collection->builder->parseWhere($predicate);
         if($result)
             return $collection;
@@ -136,7 +128,7 @@ class DBCollection extends Collection {
 
     #[Override]
     public function select(callable $selector): ICollection {
-        $collection = $this->clone();
+        $collection = clone $this;
         $result = $collection->builder->parseSelect($selector);
         if($result) {
             $sttmt = $this->ctx->run($collection->builder->buildQuery(), $collection->builder->params);
@@ -216,5 +208,9 @@ class DBCollection extends Collection {
 
     public function run(SQLBuilder $builder) {
         return $this->ctx->run($builder->buildQuery(), $builder->params);
+    }
+
+    public function __clone() {
+        $this->builder = clone $this->builder;
     }
 }

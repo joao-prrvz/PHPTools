@@ -14,8 +14,4 @@ class SQLCondition {
         $operator = $displayOperator ? $this->operator->value : "";
         return ltrim("$operator $this->expression");
     }
-
-    public function clone(): SQLCondition {
-        return new SQLCondition($this->expression, $this->operator);
-    }
 }

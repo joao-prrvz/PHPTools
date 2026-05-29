@@ -155,13 +155,6 @@ class SQLBuilder {
         $this->query = new SelectQuery($this->table, $parser->select);
         return $parser;
     }
-    
-    public function clone() {
-        $builder = new SQLBuilder($this->modelClass);
-        $builder->params = [... $this->params];
-        $builder->query = $this->query->clone();
-        return $builder;
-    }
 
     public function __clone() {
         $this->query = clone $this->query;

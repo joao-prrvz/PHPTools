@@ -15,9 +15,8 @@ class SelectQuery implements IQuery {
         $this->conditions = $conditions;
     }
 
-    public function clone(): IQuery{
-        $conditions = array_map(fn(SQLCondition $c) => $c->clone(), $this->conditions);
-        return new SelectQuery($this->table, [... $this->columns], $conditions);
+    public function __clone(){
+        $this->conditions = array_map(fn(SQLCondition $c) => clone $c, $this->conditions);
     }
 
     public function __toString() {

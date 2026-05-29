@@ -22,9 +22,7 @@ class InsertQuery implements IQuery {
         $this->count = $count;
     }
 
-    public function clone(): IQuery{
-        return new InsertQuery($this->table, $this->columns, $this->count);
-    }
+    
 
     public function __toString(): string {
         $columns = $this->formatColumns();

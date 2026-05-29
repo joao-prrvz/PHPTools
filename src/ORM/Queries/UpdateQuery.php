@@ -23,9 +23,8 @@ class UpdateQuery implements IQuery {
         $this->conditions = $conditions;
     }
 
-    public function clone(): UpdateQuery{
-        $conditions = array_map(fn(SQLCondition $c) => $c->clone(), $this->conditions);
-        return new UpdateQuery($this->table, $this->columns, $conditions);
+    public function __clone() {
+        $this->conditions = array_map(fn(SQLCondition $c) => clone $c, $this->conditions);
     }
 
     public function __toString(): string {

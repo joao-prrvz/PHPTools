@@ -182,4 +182,8 @@ class Collection implements Iterator, ICollection, Countable {
         return [... $this->items];
     }
 
+    public function __clone() {
+        $this->items = $this->items !== null ? array_map(fn($item) => clone $item, $this->items) : null;
+    }
+
 }
