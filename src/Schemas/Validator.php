@@ -156,7 +156,7 @@ class Validator {
             $attrValidate = $refMutate->newInstance();
             $value = $attrValidate->mutate($refProp, $value);
         }
-        if (count($this->errors) < 1)
+        if (count($this->errors[$field] ?? []) < 1)
             $refProp->setValue($instance, $value);
     }
 
