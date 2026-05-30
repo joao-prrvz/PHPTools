@@ -141,7 +141,7 @@ class Validator {
                 $this->addError($field, $e->getMessage());
             }
         }
-        if (count($this->errors) > 0)
+        if (count($this->errors[$field] ?? []) > 0)
             return;
         if (count($errors) >= count($refTypes)) {
             $this->addError($field, $this->generateTypeErrorMessage($refProp, $refTypes));
