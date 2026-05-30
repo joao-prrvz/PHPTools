@@ -55,7 +55,7 @@ class WhereParser implements IParser {
             return true;
 
         } catch (Throwable $e) {
-            trigger_error("WhereParser: {$e->getMessage()}", E_USER_WARNING);
+            trigger_error("WhereParser: {$e->getMessage()}", E_USER_NOTICE);
             return false;
         }
     }
