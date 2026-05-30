@@ -86,6 +86,19 @@ class Validator {
         return $obj;
     }
 
+    /**
+     * @return T
+     */
+    public function tryParse(): object {
+        $obj = $this->refClass->newInstance();
+        foreach ($this->fields as $propName => $field) {
+            $refProp = $this->refClass->getProperty($propName);
+            if ($this->checkRequired($refProp, $field))
+                $this->setValue($refProp, $obj, $field);
+        }
+        return $obj;
+    }
+
     private function checkRequired(ReflectionProperty $refProp, string $field) {
         if (array_key_exists($field, $this->data))
             return true;
