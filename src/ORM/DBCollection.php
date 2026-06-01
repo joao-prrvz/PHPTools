@@ -215,6 +215,8 @@ class DBCollection extends Collection {
         if (!($refType instanceof ReflectionNamedType))
             return $value;    
         $typeName = $refType->getName();
+        if ($refType->allowsNull() && $value === null)
+            return $value;
         switch ($typeName) {
             case DateTime::class:
                 if (is_int($value) || is_float($value))
@@ -239,6 +241,8 @@ class DBCollection extends Collection {
         if (!($refType instanceof ReflectionNamedType))
             return $value;    
         $typeName = $refType->getName();
+        if ($refType->allowsNull() && $value === null)
+            return $value;
         switch ($typeName) {
             case DateTime::class:
                 $refDateAttr = $refProp->getAttributes(Date::class)[0] ?? null;
