@@ -131,6 +131,13 @@ class DBCollection extends Collection {
         return parent::where($predicate);
     }
 
+    /**
+     * Undocumented function
+     * 
+     * @template TResult  
+     * @param callable(T): TResult $selector
+     * @return ICollection<TResult>
+     */
     #[Override]
     public function select(callable $selector): ICollection {
         $collection = clone $this;
@@ -150,7 +157,7 @@ class DBCollection extends Collection {
             $collection->add(...$items);
             return $collection;
         }
-        return parent::where($selector);
+        return parent::select($selector);
     }
 
     private function getPropertyType(string $propName): string {
