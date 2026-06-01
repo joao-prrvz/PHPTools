@@ -51,7 +51,8 @@ class SelectParser implements IParser {
             return true;
 
         } catch (Throwable $e) {
-            throw new Exception("SelectParser failed: " . $e->getMessage(), 0, $e);
+            trigger_error("SelectParser failed: " . $e->getMessage(), E_USER_NOTICE);
+            return false;
         }
     }
 

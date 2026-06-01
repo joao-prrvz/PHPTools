@@ -8,6 +8,7 @@ use PDO;
 use PHPTools\Core\Collection;
 use PHPTools\Core\ICollection;
 use PHPTools\ORM\Attributes\Date;
+use PHPTools\ORM\Queries\DeleteQuery;
 use PHPTools\ORM\Queries\InsertQuery;
 use PHPTools\ORM\Queries\SelectQuery;
 use PHPTools\ORM\Queries\SQLCondition;
@@ -257,6 +258,22 @@ class DBCollection extends Collection {
                 break;
         }
         return $value;
+    }
+
+    #[Override]
+    public function remove(mixed ...$items) {
+        $keys = $this->builder->primaryKeys;
+        $refModel = new ReflectionClass($this->itemsType);
+        foreach ($items as $item) {
+            $builder = clone $this->builder;
+            $conditions = []; 
+            foreach ($keys as $propName => $key) {
+                $conditions[] = new SQLCondition("`{$this->table}`.`{$key}` = ?");
+                $builder->params[] = $refModel->getProperty($propName)->getValue($item);
+            }
+            $builder->query = new DeleteQuery($this->table, $conditions);
+            $this->run($builder);
+        }
     }
 
     public function run(SQLBuilder $builder) {

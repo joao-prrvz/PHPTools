@@ -100,7 +100,14 @@ class DBCollectionTest extends TestCase {
             //->where(fn($u) => $u->type === UserType::ADMIN)
             ->select(fn($u) => [$u->email, $u->type]);
     }
-
+    #[Test]
+    public function remove() {
+        $user = $this->ctx->users->first();
+        $this->ctx->users->remove($user);
+        $user = $this->ctx->users
+            ->where(fn($u) => $u->id == $user->id)->first();
+        $this->assertNull($user);
+    }
     public function getTime(callable $callable): float {
         $start = microtime(true);
         $callable();
