@@ -22,7 +22,7 @@ class Sort {
                 $itemsList[] = array_slice($itemsListCopy, -1)[0];
         }
 
-        return $itemsList[0];
+        return $itemsList[0] ?? [];
     }
 
     private static function compareLists(array $currentItems, array $nextItems, ?callable $comparer = null, bool $desc = false): array {
