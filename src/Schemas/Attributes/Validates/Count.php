@@ -10,7 +10,7 @@ class Count implements IValidate {
 
     public string $message { get => sprintf($this->_message, $this->min, $this->max); }
 
-    public function __construct(public float $min, public float $max, string $message = "Must have between %1&d and %2&d items") {
+    public function __construct(public float $min, public float $max, string $message = "Must have between %1\$d and %2\$d items") {
         $this->_message = $message;
     }
 

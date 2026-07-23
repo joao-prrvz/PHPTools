@@ -10,7 +10,7 @@ class Length implements IValidate {
 
     public string $message { get => sprintf($this->_message, $this->min, $this->max); }
 
-    public function __construct(public int $min, public int $max, string $message = "Must be between %1&d and %2&d characters") {
+    public function __construct(public int $min, public int $max, string $message = "Must be between %1\$d and %2\$d characters") {
         $this->_message = $message;
     }
 
