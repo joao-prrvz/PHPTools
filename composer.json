@@ -1,6 +1,7 @@
 {
     "name": "joao-prrvz/php-tools",
     "type": "library",
+    "license": "CC-BY-4.0",
     "autoload": {
         "psr-4": {
             "PHPTools\\": "src/"
