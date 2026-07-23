@@ -16,6 +16,6 @@ class Count implements IValidate {
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {
         $count = count($value); 
-        return $count > $this->max || $count < $this->min;
+        return $count <= $this->max && $count >= $this->min;
     }
 }

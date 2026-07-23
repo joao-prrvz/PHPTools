@@ -15,6 +15,6 @@ class Range implements IValidate {
     }
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {
-        return $value > $this->max || $value < $this->min;
+        return $value <= $this->max && $value >= $this->min;
     }
 }

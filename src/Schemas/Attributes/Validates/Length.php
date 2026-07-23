@@ -16,6 +16,6 @@ class Length implements IValidate {
 
     public function validate(ReflectionProperty $refProp, mixed $value): bool {
         $length = strlen($value);
-        return $length > $this->max || $length < $this->min;
+        return $length <= $this->max && $length >= $this->min;
     }
 }
