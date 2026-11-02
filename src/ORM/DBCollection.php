@@ -208,7 +208,7 @@ class DBCollection extends Collection {
         $refClass = new ReflectionClass($this->itemsType);
         $result = [];
         foreach ($data as $entity) {
-            $obj = $refClass->newInstance();
+            $obj = $refClass->newInstanceWithoutConstructor();
             foreach ($this->builder->columns as $propName => $column) {
                 $prop = $refClass->getProperty($propName);
                 $prop->setValue($obj, $this->convertPrimitiveToComplex($prop, $entity[$column]));
